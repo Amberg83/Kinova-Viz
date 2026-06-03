@@ -672,6 +672,9 @@ MonoBehaviour:
   - {fileID: 1074792832}
   - {fileID: 1225140173}
   - {fileID: 2039381670}
+  gripperJoints: []
+  gripperOpenAngle: 0
+  gripperCloseAngle: 40
 --- !u!1 &525566093 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -5743350618785959237, guid: f2f4667a0948bf24a9f135c4d08ceb83, type: 3}
@@ -3984,7 +3987,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -6396,7 +6399,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -7070,7 +7073,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -7684,7 +7687,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
