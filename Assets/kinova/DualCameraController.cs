@@ -1,11 +1,16 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class DualCameraController : MonoBehaviour
 {
     [Header("Camera References")]
     [SerializeField] private Camera topDownCamera;
     [SerializeField] private Camera freeMovingCamera;
+
+    [Header("UI Text References")]
+    [SerializeField] private TextMeshProUGUI topDownUIText;
+    [SerializeField] private TextMeshProUGUI freeMoveUIText;
 
     [Header("Top-Down Settings")]
     public float topDownPanSpeed = 15f;
@@ -15,7 +20,7 @@ public class DualCameraController : MonoBehaviour
 
     [Header("Free Move Settings")]
     public float freeMoveSpeed = 12f;
-    public float freeMoveVerticalSpeed = 8f; // Speed for moving up/down
+    public float freeMoveVerticalSpeed = 8f;
     public float lookSensitivity = 0.1f;
 
     private bool isTopDownActive = false;
@@ -24,13 +29,15 @@ public class DualCameraController : MonoBehaviour
 
     void Start()
     {
+        // Guard Check for Cameras
         if (topDownCamera == null || freeMovingCamera == null)
         {
-            Debug.LogError("[DualCameraController] Missing Camera references on " + gameObject.name + ". Please assign them in the inspector.", this);
+            Debug.LogError("[DualCameraController] Missing Camera references. Please assign them in the inspector.", this);
             enabled = false;
             return;
         }
 
+        // Initialize state to Front/Free camera on boot
         SetCameraState(false);
 
         Vector3 currentRot = freeMovingCamera.transform.localEulerAngles;
@@ -42,8 +49,8 @@ public class DualCameraController : MonoBehaviour
     {
         if (Keyboard.current == null || Mouse.current == null) return;
 
-        // Smart Swap Guard: Only switch cameras if we are NOT actively flying/looking around
-        if (Keyboard.current.spaceKey.wasPressedThisFrame && !Mouse.current.rightButton.isPressed)
+        // Dedicated Camera Swap Key: "C"
+        if (Keyboard.current.cKey.wasPressedThisFrame)
         {
             isTopDownActive = !isTopDownActive;
             SetCameraState(isTopDownActive);
@@ -63,6 +70,12 @@ public class DualCameraController : MonoBehaviour
     {
         topDownCamera.gameObject.SetActive(topDownActive);
         freeMovingCamera.gameObject.SetActive(!topDownActive);
+
+        if (topDownUIText != null && freeMoveUIText != null)
+        {
+            topDownUIText.gameObject.SetActive(topDownActive);
+            freeMoveUIText.gameObject.SetActive(!topDownActive);
+        }
 
         if (topDownActive)
         {
@@ -103,9 +116,8 @@ public class DualCameraController : MonoBehaviour
 
     private void HandleFreeMoveControls()
     {
-        bool isLooking = Mouse.current.rightButton.isPressed;
-
-        if (isLooking)
+        // 1. Turning Control: Only look around while holding Right Mouse Button
+        if (Mouse.current.rightButton.isPressed)
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -123,28 +135,30 @@ public class DualCameraController : MonoBehaviour
             Cursor.visible = true;
         }
 
-        // Horizontal input tracking (WASD)
+        // 2. Horizontal & Diagonal Movement Input tracking (WASD + Arrow Keys combined)
         Vector2 moveInput = Vector2.zero;
-        if (Keyboard.current.wKey.isPressed) moveInput.y = 1;
-        if (Keyboard.current.sKey.isPressed) moveInput.y = -1;
-        if (Keyboard.current.aKey.isPressed) moveInput.x = -1;
-        if (Keyboard.current.dKey.isPressed) moveInput.x = 1;
+        if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) moveInput.y += 1;
+        if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) moveInput.y -= 1;
+        if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) moveInput.x -= 1;
+        if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) moveInput.x += 1;
 
-        // Vertical input tracking (Space to go Up, Left Shift to go Down)
+        // 3. Vertical Input Tracking (Space to go Up, Left Shift to go Down)
         float verticalInput = 0f;
-        if (Keyboard.current.spaceKey.isPressed) verticalInput = 1f;
-        if (Keyboard.current.leftShiftKey.isPressed) verticalInput = -1f;
+        if (Keyboard.current.spaceKey.isPressed) verticalInput += 1f;
+        if (Keyboard.current.leftShiftKey.isPressed) verticalInput -= 1f;
 
-        // Apply Horizontal Movement
+        // Apply Flat Lateral Directional Vectors 
         if (moveInput.sqrMagnitude > 0.01f)
         {
+            // Calculate direction relative to camera lens orientation
             Vector3 moveDirection = (freeMovingCamera.transform.forward * moveInput.y) + (freeMovingCamera.transform.right * moveInput.x);
-            moveDirection.y = 0; // Keep WASD locked to a flat plane
+            moveDirection.y = 0; // Lock structural translation safely on a horizontal grid plane
 
+            // Normalized ensures diagonal vector combinations don't result in double-speed movement bursts
             freeMovingCamera.transform.position += moveDirection.normalized * freeMoveSpeed * Time.deltaTime;
         }
 
-        // Apply Vertical Movement separately
+        // Apply Independent Vertical Directional Vectors
         if (Mathf.Abs(verticalInput) > 0.01f)
         {
             Vector3 upDirection = Vector3.up * verticalInput * freeMoveVerticalSpeed * Time.deltaTime;
