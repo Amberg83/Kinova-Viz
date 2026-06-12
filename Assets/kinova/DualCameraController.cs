@@ -10,21 +10,20 @@ public class DualCameraController : MonoBehaviour
     [Header("Top-Down Settings")]
     public float topDownPanSpeed = 15f;
     public float topDownZoomSpeed = 25f;
-    // Set safe minimum bounds so the camera never goes below or exactly to 0
-    public float minHeightOrZoom = 2f;
+    public float minHeightOrZoom = 0f;
     public float maxHeightOrZoom = 40f;
 
     [Header("Free Move Settings")]
     public float freeMoveSpeed = 12f;
+    public float freeMoveVerticalSpeed = 8f; // Speed for moving up/down
     public float lookSensitivity = 0.1f;
 
-    private bool isTopDownActive = true;
+    private bool isTopDownActive = false;
     private float rotationX = 0f;
     private float rotationY = 0f;
 
     void Start()
     {
-        // Missing Reference Guard
         if (topDownCamera == null || freeMovingCamera == null)
         {
             Debug.LogError("[DualCameraController] Missing Camera references on " + gameObject.name + ". Please assign them in the inspector.", this);
@@ -32,7 +31,8 @@ public class DualCameraController : MonoBehaviour
             return;
         }
 
-        SetCameraState(true);
+        SetCameraState(false);
+
         Vector3 currentRot = freeMovingCamera.transform.localEulerAngles;
         rotationX = currentRot.y;
         rotationY = -currentRot.x;
@@ -40,11 +40,10 @@ public class DualCameraController : MonoBehaviour
 
     void Update()
     {
-        // Device Check Guard
         if (Keyboard.current == null || Mouse.current == null) return;
 
-        // Toggle camera mode with Spacebar
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        // Smart Swap Guard: Only switch cameras if we are NOT actively flying/looking around
+        if (Keyboard.current.spaceKey.wasPressedThisFrame && !Mouse.current.rightButton.isPressed)
         {
             isTopDownActive = !isTopDownActive;
             SetCameraState(isTopDownActive);
@@ -83,11 +82,8 @@ public class DualCameraController : MonoBehaviour
         Vector3 move = new Vector3(moveInput.x, 0, moveInput.y) * topDownPanSpeed * Time.deltaTime;
         topDownCamera.transform.Translate(move, Space.World);
 
-        // Zoom Management with Value Guard Rails
         float scroll = Mouse.current.scroll.ReadValue().y * 0.01f;
-
-        // Ensure min Zoom is never 0 or negative to prevent viewport collapse errors
-        float safeMinZoom = Mathf.Max(0.1f, minHeightOrZoom);
+        float safeMinZoom = Mathf.Max(0.001f, minHeightOrZoom);
 
         if (topDownCamera.orthographic)
         {
@@ -100,7 +96,6 @@ public class DualCameraController : MonoBehaviour
         else
         {
             Vector3 pos = topDownCamera.transform.position;
-            // Using Time.deltaTime ensures scroll rate matches frame variance safely
             pos.y = Mathf.Clamp(pos.y - (scroll * topDownZoomSpeed * Time.deltaTime * 50f), safeMinZoom, maxHeightOrZoom);
             topDownCamera.transform.position = pos;
         }
@@ -108,7 +103,9 @@ public class DualCameraController : MonoBehaviour
 
     private void HandleFreeMoveControls()
     {
-        if (Mouse.current.rightButton.isPressed)
+        bool isLooking = Mouse.current.rightButton.isPressed;
+
+        if (isLooking)
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -116,8 +113,6 @@ public class DualCameraController : MonoBehaviour
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
             rotationX += mouseDelta.x * lookSensitivity;
             rotationY += mouseDelta.y * lookSensitivity;
-
-            // Hard limit look angles to prevent camera flipping bugs
             rotationY = Mathf.Clamp(rotationY, -85f, 85f);
 
             freeMovingCamera.transform.localRotation = Quaternion.Euler(-rotationY, rotationX, 0);
@@ -128,19 +123,32 @@ public class DualCameraController : MonoBehaviour
             Cursor.visible = true;
         }
 
+        // Horizontal input tracking (WASD)
         Vector2 moveInput = Vector2.zero;
         if (Keyboard.current.wKey.isPressed) moveInput.y = 1;
         if (Keyboard.current.sKey.isPressed) moveInput.y = -1;
         if (Keyboard.current.aKey.isPressed) moveInput.x = -1;
         if (Keyboard.current.dKey.isPressed) moveInput.x = 1;
 
-        // Prevent calculating directions if no key is pressed (fixes vector normalization errors)
+        // Vertical input tracking (Space to go Up, Left Shift to go Down)
+        float verticalInput = 0f;
+        if (Keyboard.current.spaceKey.isPressed) verticalInput = 1f;
+        if (Keyboard.current.leftShiftKey.isPressed) verticalInput = -1f;
+
+        // Apply Horizontal Movement
         if (moveInput.sqrMagnitude > 0.01f)
         {
             Vector3 moveDirection = (freeMovingCamera.transform.forward * moveInput.y) + (freeMovingCamera.transform.right * moveInput.x);
-            moveDirection.y = 0; // Lock movement horizontally
+            moveDirection.y = 0; // Keep WASD locked to a flat plane
 
             freeMovingCamera.transform.position += moveDirection.normalized * freeMoveSpeed * Time.deltaTime;
+        }
+
+        // Apply Vertical Movement separately
+        if (Mathf.Abs(verticalInput) > 0.01f)
+        {
+            Vector3 upDirection = Vector3.up * verticalInput * freeMoveVerticalSpeed * Time.deltaTime;
+            freeMovingCamera.transform.position += upDirection;
         }
     }
 }
