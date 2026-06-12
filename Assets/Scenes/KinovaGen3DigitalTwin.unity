@@ -664,7 +664,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbadffef221d13d4481e873be6605b7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RobotUDPReceiver
-  port: 5005
+  port: 50005
   robotJoints:
   - {fileID: 107600024}
   - {fileID: 1071258058}
@@ -672,7 +672,11 @@ MonoBehaviour:
   - {fileID: 1074792832}
   - {fileID: 1225140173}
   - {fileID: 2039381670}
-  gripperJoints: []
+  gripperJoints:
+  - {fileID: 7532758738719474179}
+  - {fileID: 4077649722696812628}
+  - {fileID: 9069160938963655083}
+  - {fileID: 8508377639052036175}
   gripperOpenAngle: 0
   gripperCloseAngle: 40
 --- !u!1 &525566093 stripped
@@ -3981,7 +3985,7 @@ ArticulationBody:
   m_Twist: 1
   m_XDrive:
     lowerLimit: 0
-    upperLimit: 40.107048
+    upperLimit: 40
     stiffness: 0
     damping: 0
     forceLimit: 1000
@@ -4507,7 +4511,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -4728,7 +4732,7 @@ ArticulationBody:
     forceLimit: 1000
     target: 0
     targetVelocity: 0
-    driveType: 0
+    driveType: 2
   m_YDrive:
     lowerLimit: 0
     upperLimit: 0
@@ -6392,8 +6396,8 @@ ArticulationBody:
   m_SwingZ: 2
   m_Twist: 1
   m_XDrive:
-    lowerLimit: -41.53944
-    upperLimit: 41.53944
+    lowerLimit: -40
+    upperLimit: 0
     stiffness: 0
     damping: 0
     forceLimit: 1000
@@ -7289,7 +7293,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -7509,7 +7513,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
